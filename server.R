@@ -3,8 +3,8 @@ library(reshape2)
 library(plyr)
 #read in the formatted count tables
 #note that I made a log table and a cpm table.  This is so that the code doesnt have to run the log calc everytime and is faster.
-log2CPM <- read.table(file = "NvERTXcounts_plottingLOG.txt", sep="\t", header =T) #This will read in the counts table
-cpm <- read.table(file = "NvERTXcounts_plotting.txt", sep="\t", header =T) #This will read in the counts table
+log2CPM <- read.table(file = "NvERTX.2_counts_plottingLOG.txt", sep="\t", header =T) #This will read in the counts table
+cpm <- read.table(file = "NvERTX.2_counts_plotting.txt", sep="\t", header =T) #This will read in the counts table
 
 #split the standard error values from the counts
 log2CPMSE <- log2CPM[c(17:32)] #These split the SE data and the expression data
@@ -24,13 +24,17 @@ cpmCounts$ID <- row.names(cpmCounts)
 colnames(cpmSE) = c(-2,0,2,4,8,12,16,20,24,36,48,60,72,96,120,144)# This does the same for the standard error
 cpmSE$ID <- row.names(cpmSE)
 
-annotations <- read.table(file = "NvERTx_Plotting_Annotations.txt", sep="\t", header =T, quote = "", fill=T)
-rownames(annotations) <- annotations[,c(1)]
-annotations <- annotations[-c(1)]
-annotations <- annotations[-c(9:14)]
+annotations <- read.table(file = "NvERTX.2_counts_plottingAnnot.txt", sep="\t", header =T, quote = "", fill=T)
+#rownames(annotations) <- annotations[,c(1)]
+#annotations <- annotations[-c(1)]
 
-server <- function(input, output) {
-  
+server <- function(input, output, session) {
+  observe({
+    query <- parseQueryString(session$clientData$url_search)
+    if (!is.null(query[['gene1']])) {
+      updateTextInput(session, "gene1", value = query[['gene1']])
+    }
+  })
   #this responds to the checkbox and decides whether to use the log data or cpm
   counts <- reactive({
     if (as.numeric(input$log) >0 ){
@@ -65,7 +69,7 @@ server <- function(input, output) {
   #this assigns the NvERTx numbers to the nve object
   nve <- eventReactive(input$do, {
     c(input$gene1, input$gene2, input$gene3, input$gene4, input$gene5)
-  })
+  }, ignoreNULL= F)
   
   #remove empty elements of the nve vector
   nve1 <- reactive({nve()[nve() != ""]})
@@ -155,3 +159,4 @@ server <- function(input, output) {
 #shinyApp(ui = ui, server = server)
 
 # sweet.
+
